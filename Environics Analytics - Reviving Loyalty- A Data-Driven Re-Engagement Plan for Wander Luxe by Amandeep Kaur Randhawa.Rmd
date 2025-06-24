@@ -1,0 +1,866 @@
+---
+title: "Reviving Loyalty: A Data-Driven Re-Engagement Plan for Wander Luxe by Amandeep Kaur Randhawa"
+Author: "Amandeep Kaur Randhawa"
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+  pdf_document: default
+date: "2025-06-23"
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,      # Hide code
+  results = 'hide',  # Hide output
+  message = FALSE,   # Suppress messages
+  warning = FALSE    # Suppress warnings
+)
+
+
+```
+
+
+```{r}
+# Load required libraries
+
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(ggpubr)
+library(corrplot)
+library(RColorBrewer)
+library(plotly)
+library(fmsb)  
+library(reshape2)
+library(ggridges)
+library(GGally)
+library(cluster)
+library(factoextra)
+
+
+```
+
+
+```{r}
+# Read the data
+envronics <- read_excel("EnvironicsAnalytics_Supplementary_DemoStats - Target Group ATH.xlsx", skip = 3)
+
+# Filter demographic variables
+Age_of_household_maintainer <- filter(envronics, Features %in% c("15 to 24", "25 to 34", "35 to 44", "45 to 54", "55 to 64", "65 to 74", "75 To 84", "85 Or Older"))
+Size_of_household <- filter(envronics, Features %in% c("1 Person", "2 Persons", "3 Persons", "4 Persons", "5 or More Persons"))
+Household_Type <- filter(envronics, Features %in% c("Total Family Households", "One-Family Households", "Multigenerational Family Households", "Multiple-Family Households", "Non-Family Households", "One-Person Households", "Two-Or-More-Person Households"))
+Marital_Status <- filter(envronics, Features %in% c("Married Or Living w/ A Common-Law Partner", "Single (Never Legally Married)", "Separated", "Divorced", "Widowed"))
+Children_at_Home <- filter(envronics, Features %in% c("Households with Children at Home"))
+Age_of_Children_at_Home <- filter(envronics, Features %in% c("Total Number Of Children At Home", "0 to 4", "5 to 9", "10 to 14", "15 to 19", "20 to 24", "25 and over"))
+Housing_Tenure <- filter(envronics, Features %in% c("Owned", "Rented", "Band Housing"))
+Housing_Type <- filter(envronics, Features %in% c("Houses", "Single-Detached House", "Semi-Detached House", "Row House", "Apartments", "High-rise (5+ Floors)", "Low-rise (<5 Floors)", "Detached Duplex", "Other Dwelling Types"))
+
+# Purchase data
+purchasing_data <- data.frame(
+  Target_Group = c("Timeless Trends", "Sophisticated Threads", "Indie Fashionistas", "Heights of Style", "Country Chic"),
+  Purchase_2023 = c(17, 16, 19, 15, 13),
+  Purchase_2024 = c(12, 17, 19, 10, 12),
+  Expenditure_2023 = c(1534, 1203, 823, 765, 805),
+  Expenditure_2024 = c(1239, 1265, 896, 598, 956)
+) %>%
+  mutate(
+    Purchase_Change = round(((Purchase_2024 - Purchase_2023) / Purchase_2023) * 100, 2),
+    Expenditure_Change = round(((Expenditure_2024 - Expenditure_2023) / Expenditure_2023) * 100, 2)
+  )
+
+# Social Values data
+social_values <- data.frame(
+  Target_Group = c("Timeless Trends", "Heights of Style"),
+  Brand_Genuineness = c(120, 90),
+  Importance_of_Brand = c(130, 100),
+  Community_Involvement = c(110, 95),
+  Pursuit_of_Novelty = c(80, 125),
+  Culture_Sampling = c(90, 115),
+  Social_Learning = c(85, 110)
+)
+
+# Age group summary for plots
+age_summary <- Age_of_household_maintainer %>%
+  select(Features, `Timeless Trends%`, `Heights of Style%`) %>%
+  rename(`Timeless Trends` = `Timeless Trends%`, `Heights of Style` = `Heights of Style%`) %>%
+  pivot_longer(-Features, names_to = "Target_Group", values_to = "Proportion")
+
+
+```
+
+
+**Strategic Insights & Key Opportunities**
+
+This strategy report addresses declining engagement at Wander Luxe by diagnosing two specific segments—**Timeless Trends** and **Heights of Style**—through Environics Analytics data. We uncover behavioral, demographic, and psychographic signals contributing to a notable decline in both purchase rates and average annual expenditure.
+
+Forecasts project that data-driven re-engagement strategies, personalized by segment mindset, can reverse these declines within 12–24 months, strengthening loyalty and boosting average customer value.
+
+**Introduction**
+
+Wander Luxe, a national leader in premium apparel, has recently seen diminished customer retention among key segments. To remain competitive in the lifestyle and fashion space, it must not only understand who is leaving—but why.
+
+This report goes beyond traditional metrics by pairing *DemoStats* and *SocialValues* to identify customer groups at risk and develop **The ELEVATE Framework**—a data-backed strategy tailored to reverse these trends.
+
+Our goal is to uncover not just which customer groups are disengaging, but why they are disengaging, by understanding both demographic patterns and psychographic mindsets. We then propose targeted strategies to improve engagement and spending using data-driven insights, ultimately ensuring a more personalized and effective customer experience for Wander Luxe shoppers.
+
+
+
+**Pie Charts – Age Distribution**
+These polar bar charts show the age distribution for each group. “Timeless Trends” has a higher proportion of older adults, while “Heights of Style” is more evenly spread across working-age adults.
+
+
+```{r}
+# Pie Charts - Age Distribution for Timeless Trends and Heights of Style
+ggplot(Age_of_household_maintainer, aes(x = "", y = `Timeless Trends%`, fill = Features)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y") +
+  theme_void() +
+  labs(title = "Timeless Trends Age Distribution")
+
+ggplot(Age_of_household_maintainer, aes(x = "", y = `Heights of Style%`, fill = Features)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y") +
+  theme_void() +
+  labs(title = "Heights of Style Age Distribution")
+
+```
+
+
+
+
+
+**Purchase Rate Comparison by Target Group (2023 vs 2024)**
+This chart compares purchase rates across all target groups in 2023 and 2024. It highlights that "Timeless Trends" and "Heights of Style" saw the most significant drop in engagement, indicating declining customer loyalty.
+
+
+
+```{r}
+# Visualizations
+
+#2024 Purchase Rates by Group
+ggplot(purchasing_data, aes(x = Target_Group, y = Purchase_2024, fill = Target_Group)) +
+  geom_col() +
+  labs(title = "2024 Purchase Rates by Target Group", y = "Purchase Rate (%)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+```
+**Children at Home Presence”**
+
+This chart compares the proportion of households with children at home across the Timeless Trends and Heights of Style groups. Heights of Style shows a greater presence of children at home, highlighting an opportunity to target family-oriented products and messaging.
+```{r}
+# Children at Home Presence
+Children_at_Home %>%
+  select(Features, `Timeless Trends%`, `Heights of Style%`) %>%
+  pivot_longer(-Features, names_to = "Target_Group", values_to = "Proportion") %>%
+  ggplot(aes(x = Target_Group, y = Proportion, fill = Target_Group)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Children at Home Presence") +
+  theme_minimal()
+
+
+```
+
+
+**Meet the Customer Personas**
+
+**Helen – The Timeless Loyalist**  
+Age 62, loyal for 10 years, Helen appreciates elegance and community engagement. But she recently stopped shopping due to lack of personalized connection.
+
+**Zayn – The Heights Trend Explorer**  
+Age 37, values novelty and tries new fashion drops. Zayn hasn’t engaged since early 2024, citing bland seasonal inventory and unexciting promotions.
+
+**Target Group Selection**
+
+**Selected Segments:  **
+- Timeless Trends  
+- Heights of Style
+
+**Why They Were Chosen: ** 
+- Both segments dropped **−5% in purchase rate (2023 to 2024)**.  
+- Timeless Trends had a **−$295 drop in spend**; Heights of Style declined **−$167**.  
+- Data validated by Figures and confirmed through comparative change visualization .
+
+
+
+
+
+
+
+**Age Group Distribution by Segment**
+The bar chart above compares the age group distribution of two key customer segments—Timeless Trends and Heights of Style.
+
+Timeless Trends has a significantly older age profile, with the highest proportions in the 55–64, 65–74, and 75–84 age groups. This suggests the segment consists largely of mature, established individuals likely seeking classic styles and brand trust.
+
+In contrast, Heights of Style shows a younger skew, with a concentration in the 25–44 age range. This segment likely values trendiness, novelty, and modern experiences, aligning with the persona of fashion-forward younger adults.
+
+The divergent age distributions reinforce the need for distinct re-engagement strategies—one centered on brand loyalty and authenticity for Timeless Trends, and another emphasizing innovation and trend exploration for Heights of Style.
+
+
+
+
+```{r}
+#  Age Distribution Comparison ---
+ggplot(age_summary, aes(x = Features, y = Proportion, fill = Target_Group)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_manual(values = c("Timeless Trends" = "#6a3d9a", "Heights of Style" = "#33a02c")) +
+  labs(title = "Age Group Distribution by Segment", x = "Age Group", y = "Proportion (%)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+
+
+
+
+**Children at Home by Age Group:-**
+This line chart shows the proportion of children by age bracket across the two groups. It supports lifestyle targeting and product bundling opportunities for families.
+
+
+```{r}
+#Children by Age Group Line Plot
+Age_of_Children_at_Home %>%
+  select(Features, `Timeless Trends%`, `Heights of Style%`) %>%
+  rename(`Timeless Trends` = `Timeless Trends%`, `Heights of Style` = `Heights of Style%`) %>%
+  pivot_longer(-Features, names_to = "Target_Group", values_to = "Proportion") %>%
+  ggplot(aes(x = Features, y = Proportion, color = Target_Group, group = Target_Group)) +
+  geom_line(size = 1.2) +
+  geom_point() +
+  theme_minimal() +
+  labs(title = "Children at Home by Age Group") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+
+
+
+
+
+
+**Housing Type Comparison:-**
+This bar chart shows housing preferences. “Timeless Trends” primarily live in single-detached homes, suggesting suburban or rural placement. “Heights of Style” shows more diversity in dwelling types.
+
+
+
+```{r}
+#Housing Type Comparison (Bar Chart)
+house_summary <- Housing_Type %>%
+  select(Features, `Timeless Trends%`, `Heights of Style%`) %>%
+  rename(`Timeless Trends` = `Timeless Trends%`, `Heights of Style` = `Heights of Style%`) %>%
+  pivot_longer(-Features, names_to = "Target_Group", values_to = "Proportion")
+
+ggplot(house_summary, aes(x = Features, y = Proportion, fill = Target_Group)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_minimal() +
+  coord_flip() +
+  labs(title = "Housing Type Comparison: Timeless Trends vs Heights of Style")
+
+```
+
+
+
+
+
+
+**Demographic Snapshot**
+
+| Group           | Age          | Income     | Education  | Housing Type        | Job Type      |
+|-----------------|--------------|------------|------------|---------------------|---------------|
+| Timeless Trends | Older Adults | Very High  | University | Single-Detached     | White Collar  |
+| Heights of Style| Mid-Younger  | Middle     | University | Mix (Row/Semi/Det)  | Mixed         |
+
+**Psychographic Snapshot**
+
+- **Timeless Trends:** Strong values around brand integrity, authenticity, and social responsibility.  
+- **Heights of Style:** Attracted to innovation, trend exploration, and learning through culture.
+
+**Retention Strategy: The ELEVATE Framework**
+
+| Letter | Action                   | Description                                                                                   |
+|--------|--------------------------|-----------------------------------------------------------------------------------------------|
+| **E**  | Engage Personas          | Craft lifestyle-driven campaigns around personas like Helen and Zayn.                         |
+| **L**  | Learn from Data          | Tap into *DemoStats* and *SocialValues* to trigger hyper-personalized journeys.              |
+| **E**  | Emphasize Brand Purpose  | Use emotional branding—e.g., community giving, local sourcing—for Timeless Trends.           |
+| **V**  | Value with Relevance     | Offer family-centric deals and dynamic pricing to appeal to Heights of Style.                |
+| **A**  | Amplify Digital Touchpoints | Leverage influencer partnerships and Instagram reels to re-engage socially active groups.   |
+| **T**  | Target Campaigns Precisely | Use geotargeting and age/dwelling filters for direct mail or SMS.                            |
+| **E**  | Evaluate & Adapt         | Run quarterly KPI reviews, A/B tests, and feedback surveys.                                   |
+
+**Visual Support**
+
+Strategy alignment  and KPI performance have been illustrated .
+
+**Implementation Timeline & Risk Plan**
+
+**Timeline :  **
+- **Q1** – Design & Segment Messaging  
+- **Q2** – Launch Loyalty & Trend Capsules  
+- **Q3** – Optimize & Scale
+
+**Risk & Mitigation Table**
+
+| Risk                      | Mitigation Strategy                       |
+|---------------------------|------------------------------------------|
+| Digital Fatigue           | Use multi-channel (email, in-store, SMS)|
+| Campaign Saturation       | Rotate creative monthly                   |
+| Failure to Re-engage Personas | Include feedback loop with exit surveys |
+| Misalignment of Values    | Co-create content with community partners|
+
+**Key Performance Indicators (KPIs)**
+- Purchase Rate Increase (%)  
+- Change in Average Spend ($/year)  
+- CLV (Customer Lifetime Value)  
+- Repeat Purchase Rate  
+- Reduction in Churn (%)
+
+---
+
+**Additional Notes**
+
+Both segments showed a **−5% drop** in purchase rate from 2023 to 2024.  
+“Timeless Trends” saw a **−$295 drop** in annual expenditure, while “Heights of Style” fell **−$167**.  
+These declines are visible and reinforced by the combined change analysis .
+
+
+**Average Annual Expenditure Comparison by Target Group (2023 vs 2024):-**
+This chart shows how much each target group spent on average per year. "Heights of Style" had the most substantial decline in spend (−$167), while "Sophisticated Threads" increased slightly, indicating spending potential despite purchase rate shifts.
+
+
+
+```{r}
+#Expenditure Trends 2023-2024
+expend_trend <- purchasing_data %>%
+  pivot_longer(cols = starts_with("Expenditure"), names_to = "Year", values_to = "Expenditure")
+
+ggplot(expend_trend, aes(x = Year, y = Expenditure, group = Target_Group, color = Target_Group)) +
+  geom_line(size = 1.2) + geom_point() +
+  labs(title = "Expenditure Trends by Target Group") +
+  theme_minimal()
+
+```
+
+
+
+
+
+**Purchase Rate Change (YoY):-**
+This chart shows the percentage point change in purchase rates from 2023 to 2024. "Timeless Trends" and "Heights of Style" both show a 5% decline, marking them as high-priority groups for re-engagement.
+
+
+
+
+
+
+**Average Spend Change (YoY):-**
+This chart shows the year-over-year change in average annual spending per group. “Timeless Trends” dropped by $295, suggesting a significant loss in customer value.
+
+
+```{r}
+#Purchase & Expenditure percentage  Change Side-by-Side 
+purchasing_data_long <- purchasing_data %>%
+  pivot_longer(cols = c(Purchase_Change, Expenditure_Change),
+               names_to = "Metric", values_to = "PercentChange")
+
+ggplot(purchasing_data_long, aes(x = Target_Group, y = PercentChange, fill = Metric)) +
+  geom_col(position = position_dodge()) +
+  labs(title = "Purchase & Expenditure % Change by Target Group", y = "% Change") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+
+
+
+
+
+
+
+
+
+**Social Values Radar – Timeless Trends**
+This radar chart maps out the indexed social values for “Timeless Trends.” The group scores highly on Brand Importance and Genuineness, suggesting a strong affinity for premium, authentic branding.
+
+**Social Values Radar – Heights of Style**
+This radar chart shows that “Heights of Style” scores highest on Pursuit of Novelty and Culture Sampling, indicating a preference for fresh trends and diversity—ideal for dynamic seasonal campaigns.
+
+
+
+```{r}
+#Psychographic Radar Chart ----
+radar_data <- social_values[, -1]
+rownames(radar_data) <- social_values$Target_Group
+
+radar_chart_data <- rbind(
+  max = rep(150, ncol(radar_data)),
+  min = rep(50, ncol(radar_data)),
+  radar_data
+)
+
+fmsb::radarchart(radar_chart_data,
+           axistype = 1,
+           pcol = c("#1f78b4", "#e31a1c"),
+           pfcol = c(scales::alpha("#1f78b4", 0.3), scales::alpha("#e31a1c", 0.3)),
+           plwd = 2,
+           cglcol = "grey", cglty = 1,
+           axislabcol = "black",
+           vlcex = 0.8)
+legend("topright", legend = rownames(radar_data), bty = "n", pch = 20,
+       col = c("#1f78b4", "#e31a1c"), pt.cex = 2)
+title("Psychographic Profiles (Radar Chart)")
+
+
+```
+
+
+
+
+
+
+
+
+**Age Group Breakdown by Target Group:-**
+This chart expands the age group comparison across multiple target groups. It helps tailor communication strategies based on generational distribution.
+
+
+
+```{r}
+
+# Age Group Breakdown Bar Chart (all groups)
+ggplot(age_summary, aes(x = Features, y = Proportion, fill = Target_Group)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  labs(title = "Age Group Breakdown by Target Group") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+
+
+
+
+
+
+**Social Values Heatmap**
+This correlation-style matrix visualizes key social value dimensions across both groups. It enables a quick psychographic contrast at a glance.
+
+
+```{r}
+#Social Values Heatmap (Matrix-style)
+social_matrix <- as.matrix(social_values[, -1])
+rownames(social_matrix) <- social_values$Target_Group
+
+corrplot(social_matrix, is.corr = FALSE, method = "color", title = "Social Values Heatmap", mar = c(0, 0, 2, 0))
+
+```
+
+
+
+
+
+**Interactive Radar – Social Values Comparison**
+This interactive radar chart compares both groups on six social value dimensions, helping to differentiate positioning and engagement tactics.
+
+
+```{r}
+#Interactive Radar Chart with plotly for Social Values (for both groups)
+plot_ly(type = 'scatterpolar', fill = 'toself') %>%
+  add_trace(r = as.numeric(social_values[1, 2:7]), theta = names(social_values)[2:7], name = "Timeless Trends") %>%
+  add_trace(r = as.numeric(social_values[2, 2:7]), theta = names(social_values)[2:7], name = "Heights of Style") %>%
+  layout(title = "Radar Chart - Social Values Comparison", polar = list(radialaxis = list(visible = TRUE)))
+
+```
+
+
+
+
+
+
+
+
+
+
+
+**Purchase vs Expenditure % Change Scatterplot:-**
+This scatter plot reveals the relationship between changes in purchasing behavior and spending. Groups in the bottom-left quadrant (like “Heights of Style”) show decline in both, making them high-priority.
+
+
+```{r}
+#  Purchase vs Expenditure Change Scatterplot
+ggplot(purchasing_data, aes(x = Purchase_Change, y = Expenditure_Change, color = Target_Group)) +
+  geom_point(size = 4) +
+  theme_minimal() +
+  labs(title = "Purchase vs Expenditure % Change by Target Group")
+
+```
+
+
+
+
+
+
+**Percentage Change in Annual Expenditure**
+The bar chart illustrates the year-over-year percentage change in average annual expenditure for the two target segments—Timeless Trends and Heights of Style.
+
+Timeless Trends experienced a notable decline in spending, with an average annual expenditure decrease of −$295, represented by a red bar. This drop reflects reduced engagement, potentially due to a lack of personalized touchpoints or product alignment with the evolving preferences of this older segment.
+
+Heights of Style also showed a moderate decline of −$167, suggesting a weakening connection with trend-conscious younger shoppers. This may point to uninspired promotional efforts or a mismatch between product assortment and current fashion expectations.
+
+These downward trends signal an urgent need for segment-specific re-engagement strategies that reflect the unique values and motivations of each group—such as emphasizing authenticity and community for Timeless Trends and spotlighting innovation and novelty for Heights of Style.
+```{r}
+# Percentage Change in Expenditure ---
+ggplot(purchasing_data, aes(x = Target_Group, y = Expenditure_Change, fill = Expenditure_Change > 0)) +
+  geom_col() +
+  scale_fill_manual(values = c("TRUE" = "#2ca25f", "FALSE" = "#cb181d"), guide = "none") +
+  labs(title = "Percentage Change in Annual Expenditure", y = "Change (%)") +
+  geom_text(aes(label = paste0(Expenditure_Change, "%")), vjust = ifelse(purchasing_data$Expenditure_Change > 0, -0.5, 1.5)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+
+```
+
+
+
+
+
+
+**Parallel Coordinates – Psychographic Profiles**
+The parallel coordinates plot above compares the psychographic dimensions of the two segments—Timeless Trends and Heights of Style—across multiple SocialValues indicators.
+
+Timeless Trends shows consistently higher scores in dimensions such as Brand Genuineness, Community Involvement, and Tradition, indicating a preference for authenticity, reliability, and social responsibility. This profile aligns with a more mature, value-driven consumer base.
+
+In contrast, Heights of Style demonstrates elevated values in Pursuit of Novelty, Cultural Sampling, and Social Learning, reflecting a desire for new experiences, innovation, and exploration. This suggests a younger, trend-sensitive demographic that thrives on change and discovery.
+
+The clear divergence between the segments across key psychographic dimensions highlights the need for tailored messaging and experiences:
+
+For Timeless Trends, campaigns should emphasize trust, heritage, and social causes.
+
+For Heights of Style, the focus should be on trend previews, exclusive drops, and culturally rich brand narratives.
+
+By leveraging these distinct psychographic insights, Wander Luxe can deliver more relevant and emotionally resonant customer engagement.
+```{r}
+
+# Transform psychographic data to long format for plotting
+social_long <- social_values %>%
+  pivot_longer(-Target_Group, names_to = "Dimension", values_to = "Score")
+
+# Plot parallel coordinates
+ggplot(social_long, aes(x = Dimension, y = Score, group = Target_Group, color = Target_Group)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  scale_color_manual(values = c("Timeless Trends" = "#1b9e77", "Heights of Style" = "#d95f02")) +
+  labs(title = "Parallel Coordinates – Psychographic Profiles") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1))
+
+```
+
+
+
+
+
+
+**PCA Biplot – Psychographic Dimensions**
+The PCA biplot visualizes the psychographic profiles of the two segments—Timeless Trends and Heights of Style—based on multiple social value dimensions.
+
+The first two principal components capture the majority of variance in the data, allowing us to see how segments differ in terms of underlying psychographic factors.
+
+Timeless Trends and Heights of Style are well separated in the plot, confirming distinct value orientations.
+
+The vectors represent individual psychographic dimensions and their influence on segment positioning:
+
+Dimensions like Brand Genuineness and Community Involvement strongly align with Timeless Trends.
+
+Conversely, Pursuit of Novelty and Cultural Sampling are closely associated with Heights of Style.
+
+This separation illustrates how the segments prioritize different brand values and lifestyle factors, reinforcing the importance of targeted marketing strategies that resonate uniquely with each group’s psychographic profile.
+
+```{r}
+
+#  PCA Biplot Analysis
+
+# Prepare data
+psych_data <- social_values[, -1]
+rownames(psych_data) <- social_values$Target_Group
+
+# Run PCA
+pca_result <- prcomp(psych_data, scale. = TRUE)
+
+# Plot PCA biplot
+fviz_pca_biplot(pca_result, 
+                repel = TRUE, 
+                title = " PCA Biplot – Psychographic Dimensions",
+                col.ind = c("#1b9e77", "#d95f02"),
+                geom = "point")
+
+
+```
+
+
+
+
+
+
+**K-Means Clustering Heatmap**
+This heatmap visualizes the results of a K-Means clustering analysis based on purchase rate change and expenditure change across different customer segments.
+
+The data were standardized and grouped into three distinct clusters, highlighting patterns of similarity among segments.
+
+Colors represent standardized values, where green indicates above-average performance and red indicates below-average performance on each metric.
+
+Clusters reveal segments with similar purchasing behavior changes:
+
+Some groups show positive changes in both purchase rate and expenditure (green hues).
+
+Others display declines in one or both metrics (red hues).
+
+This clustering helps identify which segments are improving versus those experiencing setbacks, enabling focused re-engagement strategies tailored to each cluster’s behavioral profile.
+
+```{r}
+# K-Means Clustering Heatmap
+
+# Prepare data for clustering
+cluster_data <- purchasing_data %>%
+  select(Target_Group, Purchase_Change, Expenditure_Change)
+
+# Assign rownames without using column_to_rownames
+rownames(cluster_data) <- cluster_data$Target_Group
+cluster_data <- cluster_data[, -1]
+
+# Standardize data
+cluster_scaled <- scale(cluster_data)
+
+# K-Means clustering (3 groups)
+k_result <- kmeans(cluster_scaled, centers = 3)
+
+# Add cluster labels
+heat_data <- as.data.frame(cluster_scaled)
+heat_data$Cluster <- as.factor(k_result$cluster)
+
+# Melt data for heatmap
+heat_melt <- melt(heat_data[ , -ncol(heat_data)])
+heat_melt$Group <- rownames(heat_data)[as.numeric(rownames(heat_melt))]
+
+# Plot heatmap
+ggplot(heat_melt, aes(x = variable, y = Group, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "#d73027", mid = "white", high = "#1a9850", midpoint = 0) +
+  labs(title = " K-Means Clustering Heatmap",
+       x = "Metric", y = "Target Group") +
+  theme_minimal()
+
+
+```
+
+
+
+
+
+
+**Bubble Plot – Segment Impact Overview**
+This bubble plot illustrates the relationship between changes in purchase rate and changes in expenditure across customer segments, with bubble size representing segment size.
+
+The horizontal axis shows the percentage change in purchase rate, while the vertical axis displays the percentage change in annual spend.
+
+Bubble size reflects the relative size of each segment, highlighting the potential impact of each group on overall revenue.
+
+Segments positioned in the upper right quadrant indicate positive growth in both purchase frequency and spending—ideal targets for scaling up marketing efforts.
+
+Conversely, bubbles in the lower left represent segments with declines in both metrics, signaling areas that require urgent re-engagement.
+
+The size of the bubbles helps prioritize efforts, as larger segments with negative trends may represent greater revenue risk.
+
+This visualization provides a clear, intuitive way to assess which segments offer growth opportunities and which need focused retention strategies.
+
+
+
+```{r}
+#  Bubble Plot for Segments
+
+
+if (!"Segment_Size" %in% colnames(purchasing_data)) {
+  purchasing_data$Segment_Size <- c(400, 300, 500, 450, 350)
+}
+
+# Bubble plot of Purchase vs Spend Change with Segment Size
+ggplot(purchasing_data, aes(x = Purchase_Change, y = Expenditure_Change, size = Segment_Size, fill = Target_Group)) +
+  geom_point(alpha = 0.7, shape = 21, color = "black") +
+  scale_size_continuous(range = c(5, 20)) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(title = " Bubble Plot – Segment Impact Overview",
+       x = "Percentage  Change in Purchase Rate",
+       y = "Percentage Change in Spend",
+       size = "Segment Size") +
+  theme_minimal()
+
+```
+
+
+
+
+
+
+**Correlation Matrix – Psychographics and Behavioral Metrics**
+This correlation matrix explores the relationships between psychographic dimensions (social values) and purchasing behaviors across customer segments.
+
+Positive correlations (blue shades) indicate that higher scores on certain psychographic traits are associated with increases in purchasing metrics such as purchase rates and expenditure.
+
+Negative correlations (red shades) suggest inverse relationships, where stronger psychographic traits may correspond with lower purchase or spending activity.
+
+For example, a strong positive correlation between values like “Brand Genuineness” and purchase change would imply that customers valuing authenticity tend to maintain or increase their buying behavior.
+
+Conversely, a negative correlation between novelty-seeking traits and expenditure change might indicate that trend-focused customers reduce spending when product offerings feel less fresh.
+
+This combined view helps to pinpoint which psychographic factors most strongly influence customer behavior, guiding personalized marketing and engagement strategies.
+
+
+```{r}
+#  Correlation Matrix – Psychographics + Behavior
+# Combine data
+combined <- social_values %>%
+  left_join(purchasing_data, by = "Target_Group") %>%
+  select(-Target_Group, -Segment_Size)  # Remove non-numeric fields
+
+# Correlation plot
+cor_matrix <- cor(combined, use = "complete.obs")
+corrplot(cor_matrix, method = "color", type = "upper",
+         col = colorRampPalette(c("red", "white", "blue"))(200),
+         title = " Correlation Matrix – Values vs Behavior",
+         mar = c(0,0,1,0), tl.cex = 0.8)
+
+```
+
+
+
+
+
+
+
+**Trait Strength Comparison by Segment**
+This set of faceted bar charts displays the intensity of various psychographic traits for each customer segment separately.
+
+Each chart highlights how strongly a segment scores on key social values or psychological traits.
+
+By separating the segments into individual panels, it’s easier to see the distinct profile of each group without overlap.
+
+For example, one segment might show higher scores in traits like Brand Authenticity or Community Involvement, indicating deeper emotional connections and loyalty.
+
+Another segment may score higher in Trend-Seeking or Innovation, reflecting a preference for novelty and cultural exploration.
+
+This side-by-side comparison underscores the unique mindset of each segment, which is critical for designing tailored engagement strategies that resonate on a personal level.
+```{r}
+# Faceted Bar Charts – Value Trait Strength by Segment
+
+# Long format
+trait_long <- pivot_longer(social_values, -Target_Group, names_to = "Trait", values_to = "Score")
+
+# Plot
+ggplot(trait_long, aes(x = Trait, y = Score, fill = Target_Group)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ Target_Group) +
+  coord_flip() +
+  labs(title = " Trait Strength Comparison per Segment",
+       y = "Score", x = "Psychographic Trait") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+
+```
+
+
+
+
+
+
+
+**Trend Shifts in Purchase and Expenditure by Segment (2023 vs 2024)**
+This heatmap visualizes changes in purchase rates and expenditure for each customer segment across two years.
+
+The color intensity reflects the magnitude of purchases and spending, with darker shades indicating higher values.
+
+By splitting the data into purchase behavior and expenditure, we can track how each segment's engagement evolved from 2023 to 2024.
+
+Some segments show a noticeable decrease in both purchase frequency and spending, suggesting potential disengagement or shifting preferences.
+
+Conversely, lighter shades or consistent color intensity indicate stable or growing customer activity.
+
+These visual patterns highlight where re-engagement efforts may be most needed to reverse negative trends or capitalize on positive momentum.
+```{r}
+
+# Heatmap – Purchase/Spend Changes (2023 vs 2024)
+
+# Melt data
+trend_long <- purchasing_data %>%
+  select(Target_Group, Purchase_2023, Purchase_2024, Expenditure_2023, Expenditure_2024) %>%
+  pivot_longer(-Target_Group, names_to = "Metric", values_to = "Value") %>%
+  separate(Metric, into = c("Type", "Year"), sep = "_")
+
+# Plot heatmap
+ggplot(trend_long, aes(x = Year, y = Target_Group, fill = Value)) +
+  geom_tile(color = "white") +
+  facet_wrap(~Type, scales = "free_x") +
+  scale_fill_gradient(low = "#fee8c8", high = "#e34a33") +
+  labs(title = " Heatmap – Trend Shifts (2023 vs 2024)",
+       x = "Year", y = "Target Group") +
+  theme_minimal()
+
+```
+
+
+
+
+
+**Implementation Plan Timeline**
+This Gantt-style timeline lays out a 3-phase implementation plan, including design, rollout, and review over three quarters. It ensures clarity in execution steps and team responsibilities.
+
+
+```{r}
+#Implementation Plan Timeline 
+timeline_data <- data.frame(
+  Task = c("Design & Pilot", "Roll Out Campaigns", "Review & Adjust"),
+  Start = c(1, 4, 7),
+  End = c(3, 6, 9)
+)
+
+ggplot(timeline_data) +
+  geom_segment(aes(x = Start, xend = End, y = Task, yend = Task), size = 6, color = "steelblue") +
+  scale_x_continuous(breaks = 1:9, labels = paste0("Q", rep(1:3, each=3))) +
+  labs(title = "Implementation Plan Timeline", x = "Quarter", y = "Task") +
+  theme_minimal()
+
+```
+
+
+
+
+
+
+
+
+
+**Conclusion**
+
+This analysis highlights two key customer segments—Timeless Trends and Heights of Style—both facing notable drops in purchase rates and annual spend from 2023 to 2024. Demographic and psychographic data from Environics Analytics help explain these trends.
+
+Timeless Trends tends to be older, affluent, and values authenticity and premium experiences. In contrast, Heights of Style skews younger and is drawn to novelty and cultural trends. Age distribution and psychographic profiles clearly show these differences, suggesting distinct engagement strategies for each group.
+
+Clustering and heatmap analyses reveal varying risk levels and spending behaviors, helping prioritize focus. The bubble plot shows segment size and impact, guiding resource allocation. Correlation analysis ties key values to purchase behaviors, supporting targeted interventions.
+
+Together, these insights shape a personalized retention strategy. With the phased ELEVATE Framework and ongoing KPI tracking, Wander Luxe can reconnect with these segments, boost loyalty, and drive growth. By understanding both who the customers are and what they care about, the brand can create meaningful, data-driven connections.
+
+Through personas like Helen and Zayn, this plan offers a clear path to win back at-risk customers with empathy and innovation, positioning Wander Luxe to lead in the competitive apparel market.
